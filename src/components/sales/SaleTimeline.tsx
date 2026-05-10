@@ -2,10 +2,11 @@
 
 import React from "react";
 import type { SaleStatus } from "@/types/sale";
+import { formatAddress, formatTimestamp } from "@/lib/format";
 
 interface TimelineEvent {
   status: SaleStatus;
-  timestamp: number;
+  timestamp: bigint | number;
   actor: string;
 }
 
@@ -28,10 +29,8 @@ export function SaleTimeline({ events }: SaleTimelineProps) {
           </div>
           <div className="pb-4">
             <div className="font-semibold text-gray-900">{event.status}</div>
-            <div className="text-sm text-gray-600">
-              {new Date(event.timestamp * 1000).toLocaleString()}
-            </div>
-            <div className="text-xs text-gray-500 font-mono">{event.actor}</div>
+            <div className="text-sm text-gray-600">{formatTimestamp(event.timestamp)}</div>
+            <div className="text-xs text-gray-500 font-mono">{formatAddress(event.actor)}</div>
           </div>
         </div>
       ))}

@@ -1,6 +1,8 @@
-import { HardhatUserConfig } from "hardhat/config";
+import { defineConfig } from "hardhat/config";
+import hardhatToolboxMochaEthers from "@nomicfoundation/hardhat-toolbox-mocha-ethers";
 
-const config: HardhatUserConfig = {
+const config = defineConfig({
+  plugins: [hardhatToolboxMochaEthers],
   solidity: {
     version: "0.8.24",
     settings: {
@@ -17,6 +19,6 @@ const config: HardhatUserConfig = {
       url: "http://127.0.0.1:8545",
     },
   },
-};
+});
 
 export default config;

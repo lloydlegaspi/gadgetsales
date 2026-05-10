@@ -16,6 +16,7 @@ const eslintConfig = defineConfig([
     "artifacts/**",
     "cache/**",
     "typechain-types/**",
+    "types/**",
     "ignition/deployments/**",
   ]),
 ]);

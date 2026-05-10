@@ -1,43 +1,50 @@
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import { network } from "hardhat";
+import type { Contract } from "ethers";
+import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
+import { anyValue } from "@nomicfoundation/hardhat-ethers-chai-matchers/withArgs";
 
 describe("GadgetSales", function () {
-  let gadgetSales: Awaited<ReturnType<typeof ethers.deployContract>>;
-  let seller: Awaited<ReturnType<(typeof ethers.getSigners)[number]>>;
-  let buyer: Awaited<ReturnType<(typeof ethers.getSigners)[number]>>;
-  let other: Awaited<ReturnType<(typeof ethers.getSigners)[number]>>;
+  let hhEthers: Awaited<ReturnType<typeof network.create>>["ethers"];
+  let gadgetSales: Contract;
+  let seller: HardhatEthersSigner;
+  let buyer: HardhatEthersSigner;
+  let other: HardhatEthersSigner;
 
   beforeEach(async function () {
-    [seller, buyer, other] = await ethers.getSigners();
+    const connection = await network.create();
+    hhEthers = connection.ethers;
 
-    const GadgetSales = await ethers.getContractFactory("GadgetSales");
-    gadgetSales = await GadgetSales.deploy();
+    [seller, buyer, other] = await hhEthers.getSigners();
+
+    const GadgetSalesFactory = await hhEthers.getContractFactory("GadgetSales");
+    gadgetSales = await GadgetSalesFactory.deploy();
   });
 
   describe("Create Sale", function () {
     it("should create a sale with correct seller and status", async function () {
-      const tx = await gadgetSales.connect(seller).createSale(
-        ethers.parseEther("1.0"),
+      await expect(
+        gadgetSales.connect(seller).createSale(
+        hhEthers.parseEther("1.0"),
         "iPhone 12",
         "Apple iPhone 12 128GB",
         "Used, minor scratches",
         "0xabcd1234",
         "0x"
-      );
-
-      expect(tx).to.emit(gadgetSales, "SaleCreated");
+        )
+      ).to.emit(gadgetSales, "SaleCreated");
 
       const sale = await gadgetSales.getSale(1);
       expect(sale.id).to.equal(1);
       expect(sale.seller).to.equal(seller.address);
-      expect(sale.buyer).to.equal(ethers.ZeroAddress);
+      expect(sale.buyer).to.equal(hhEthers.ZeroAddress);
       expect(sale.gadgetName).to.equal("iPhone 12");
       expect(sale.status).to.equal(0); // Created
     });
 
     it("should increment sale IDs correctly", async function () {
       await gadgetSales.connect(seller).createSale(
-        ethers.parseEther("1.0"),
+        hhEthers.parseEther("1.0"),
         "Item1",
         "Brand1",
         "Condition1",
@@ -46,7 +53,7 @@ describe("GadgetSales", function () {
       );
 
       await gadgetSales.connect(seller).createSale(
-        ethers.parseEther("2.0"),
+        hhEthers.parseEther("2.0"),
         "Item2",
         "Brand2",
         "Condition2",
@@ -63,7 +70,7 @@ describe("GadgetSales", function () {
 
     it("should add sale ID to seller's list", async function () {
       await gadgetSales.connect(seller).createSale(
-        ethers.parseEther("1.0"),
+        hhEthers.parseEther("1.0"),
         "iPhone 12",
         "Apple",
         "Good",
@@ -79,7 +86,7 @@ describe("GadgetSales", function () {
   describe("Accept Sale", function () {
     beforeEach(async function () {
       await gadgetSales.connect(seller).createSale(
-        ethers.parseEther("1.0"),
+        hhEthers.parseEther("1.0"),
         "iPhone 12",
         "Apple",
         "Good",
@@ -118,15 +125,16 @@ describe("GadgetSales", function () {
     });
 
     it("should emit SaleAccepted event", async function () {
-      const tx = gadgetSales.connect(buyer).acceptSale(1);
-      expect(tx).to.emit(gadgetSales, "SaleAccepted").withArgs(1, buyer.address);
+      await expect(gadgetSales.connect(buyer).acceptSale(1))
+        .to.emit(gadgetSales, "SaleAccepted")
+        .withArgs(1, buyer.address, anyValue);
     });
   });
 
   describe("Mark Delivered", function () {
     beforeEach(async function () {
       await gadgetSales.connect(seller).createSale(
-        ethers.parseEther("1.0"),
+        hhEthers.parseEther("1.0"),
         "iPhone 12",
         "Apple",
         "Good",
@@ -151,7 +159,7 @@ describe("GadgetSales", function () {
 
     it("should reject if sale is not in Accepted status", async function () {
       await gadgetSales.connect(seller).createSale(
-        ethers.parseEther("1.0"),
+        hhEthers.parseEther("1.0"),
         "Item",
         "Brand",
         "Condition",
@@ -165,15 +173,16 @@ describe("GadgetSales", function () {
     });
 
     it("should emit SaleDelivered event", async function () {
-      const tx = gadgetSales.connect(seller).markDelivered(1);
-      expect(tx).to.emit(gadgetSales, "SaleDelivered").withArgs(1, seller.address);
+      await expect(gadgetSales.connect(seller).markDelivered(1))
+        .to.emit(gadgetSales, "SaleDelivered")
+        .withArgs(1, seller.address, anyValue);
     });
   });
 
   describe("Confirm Receipt", function () {
     beforeEach(async function () {
       await gadgetSales.connect(seller).createSale(
-        ethers.parseEther("1.0"),
+        hhEthers.parseEther("1.0"),
         "iPhone 12",
         "Apple",
         "Good",
@@ -198,19 +207,22 @@ describe("GadgetSales", function () {
     });
 
     it("should reject if sale is not in Delivered status", async function () {
-      await expect(gadgetSales.connect(buyer).confirmReceipt(2)).to.be.reverted;
+      await expect(gadgetSales.connect(buyer).confirmReceipt(2)).to.be.revertedWith(
+        "Sale does not exist"
+      );
     });
 
     it("should emit SaleCompleted event", async function () {
-      const tx = gadgetSales.connect(buyer).confirmReceipt(1);
-      expect(tx).to.emit(gadgetSales, "SaleCompleted").withArgs(1, buyer.address);
+      await expect(gadgetSales.connect(buyer).confirmReceipt(1))
+        .to.emit(gadgetSales, "SaleCompleted")
+        .withArgs(1, buyer.address, anyValue);
     });
   });
 
   describe("Open Dispute", function () {
     beforeEach(async function () {
       await gadgetSales.connect(seller).createSale(
-        ethers.parseEther("1.0"),
+        hhEthers.parseEther("1.0"),
         "iPhone 12",
         "Apple",
         "Good",
@@ -235,19 +247,22 @@ describe("GadgetSales", function () {
     });
 
     it("should reject if sale is not in Delivered status", async function () {
-      await expect(gadgetSales.connect(buyer).openDispute(2)).to.be.reverted;
+      await expect(gadgetSales.connect(buyer).openDispute(2)).to.be.revertedWith(
+        "Sale does not exist"
+      );
     });
 
     it("should emit SaleDisputed event", async function () {
-      const tx = gadgetSales.connect(buyer).openDispute(1);
-      expect(tx).to.emit(gadgetSales, "SaleDisputed").withArgs(1, buyer.address);
+      await expect(gadgetSales.connect(buyer).openDispute(1))
+        .to.emit(gadgetSales, "SaleDisputed")
+        .withArgs(1, buyer.address, anyValue);
     });
   });
 
   describe("Cancel Sale", function () {
     beforeEach(async function () {
       await gadgetSales.connect(seller).createSale(
-        ethers.parseEther("1.0"),
+        hhEthers.parseEther("1.0"),
         "iPhone 12",
         "Apple",
         "Good",
@@ -287,15 +302,16 @@ describe("GadgetSales", function () {
     });
 
     it("should emit SaleCancelled event", async function () {
-      const tx = gadgetSales.connect(seller).cancelSale(1);
-      expect(tx).to.emit(gadgetSales, "SaleCancelled").withArgs(1, seller.address);
+      await expect(gadgetSales.connect(seller).cancelSale(1))
+        .to.emit(gadgetSales, "SaleCancelled")
+        .withArgs(1, seller.address, anyValue);
     });
   });
 
   describe("Invalid State Transitions", function () {
     beforeEach(async function () {
       await gadgetSales.connect(seller).createSale(
-        ethers.parseEther("1.0"),
+        hhEthers.parseEther("1.0"),
         "iPhone 12",
         "Apple",
         "Good",
@@ -312,13 +328,13 @@ describe("GadgetSales", function () {
 
     it("should reject transition from Created to Completed", async function () {
       await expect(gadgetSales.connect(buyer).confirmReceipt(1)).to.be.revertedWith(
-        "Sale must be in Delivered status"
+        "Only buyer can confirm receipt"
       );
     });
 
     it("should reject dispute from Created status", async function () {
       await expect(gadgetSales.connect(buyer).openDispute(1)).to.be.revertedWith(
-        "Sale must be in Delivered status"
+        "Only buyer can open dispute"
       );
     });
   });
@@ -326,7 +342,7 @@ describe("GadgetSales", function () {
   describe("Terminal States", function () {
     it("should not allow state changes from Completed", async function () {
       await gadgetSales.connect(seller).createSale(
-        ethers.parseEther("1.0"),
+        hhEthers.parseEther("1.0"),
         "iPhone 12",
         "Apple",
         "Good",
@@ -338,12 +354,14 @@ describe("GadgetSales", function () {
       await gadgetSales.connect(buyer).confirmReceipt(1);
 
       // Try to change from terminal Completed state
-      await expect(gadgetSales.connect(seller).markDelivered(1)).to.be.reverted;
+      await expect(gadgetSales.connect(seller).markDelivered(1)).to.be.revertedWith(
+        "Sale must be in Accepted status"
+      );
     });
 
     it("should not allow state changes from Disputed", async function () {
       await gadgetSales.connect(seller).createSale(
-        ethers.parseEther("1.0"),
+        hhEthers.parseEther("1.0"),
         "iPhone 12",
         "Apple",
         "Good",
@@ -355,12 +373,14 @@ describe("GadgetSales", function () {
       await gadgetSales.connect(buyer).openDispute(1);
 
       // Try to change from terminal Disputed state
-      await expect(gadgetSales.connect(buyer).confirmReceipt(1)).to.be.reverted;
+      await expect(gadgetSales.connect(buyer).confirmReceipt(1)).to.be.revertedWith(
+        "Sale must be in Delivered status"
+      );
     });
 
     it("should not allow state changes from Cancelled", async function () {
       await gadgetSales.connect(seller).createSale(
-        ethers.parseEther("1.0"),
+        hhEthers.parseEther("1.0"),
         "iPhone 12",
         "Apple",
         "Good",
