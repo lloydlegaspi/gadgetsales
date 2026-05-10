@@ -1,36 +1,167 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GadgetSales
 
-## Getting Started
+A blockchain-based transaction verification system for second-hand gadget sales.
 
-First, run the development server:
+## Problem Statement
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+When buying or selling second-hand gadgets, agreements made via chat or messaging are easily edited, deleted, or disputed. There is no shared, tamper-resistant record of what was actually agreed. GadgetSales solves this by recording sale agreements and status updates on a blockchain, creating an immutable transaction history both parties can trust.
+
+## MVP Scope
+
+- Sellers create sale records with gadget details, price, and condition.
+- Buyers view sales and accept them on the blockchain.
+- Track status transitions: Created → Accepted → Delivered → Completed.
+- Sellers can mark items as delivered; buyers can confirm receipt or open disputes.
+- View immutable transaction history with timestamps and actor addresses.
+
+**What this MVP does NOT do:**
+- Does not prove gadget authenticity or ownership.
+- Does not implement real escrow or payment processing.
+- Does not provide automatic dispute resolution.
+- Does not replace legal documentation.
+
+## Tech Stack
+
+- **Frontend:** Next.js with App Router, TypeScript, React, Tailwind CSS
+- **Smart Contract:** Solidity ^0.8.24
+- **Development:** Hardhat, ethers.js
+- **Wallet:** MetaMask-compatible injected wallet
+- **State Management:** React state hooks only (no Redux/Zustand)
+- **Database:** None for MVP (blockchain only)
+
+## On-Chain vs Off-Chain Data Design
+
+### On-Chain (Smart Contract Storage)
+- Sale ID, seller address, buyer address
+- Price, gadget name, brand/model, condition summary
+- Agreement hash, optional proof hash
+- Sale status and status timestamps
+- All transactions and state changes are immutable and auditable
+
+### Off-Chain (Browser/Local)
+- Full gadget descriptions and images (too large for blockchain)
+- Long-form notes and attachments
+- UI-only session data (form drafts, temporary state)
+- Proof files, receipts, and photos (only hashes stored on-chain)
+
+## Smart Contract State Flow
+
+```
+Created
+  ├─→ Accepted
+  │    ├─→ Delivered
+  │    │    ├─→ Completed ✓
+  │    │    └─→ Disputed ✓
+  │    └─→ Cancelled ✓
+  └─→ Cancelled ✓
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**Terminal states:** Completed, Disputed, Cancelled (no further changes allowed)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Local Development Setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Prerequisites
+- Node.js 18+
+- npm or yarn
+- MetaMask or compatible Ethereum wallet (for testing)
 
-## Learn More
+### Installation
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# Clone and install dependencies
+git clone <repo-url>
+cd gadgetsales
+npm install
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Ensure Hardhat is configured
+npx hardhat --version
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Running the Project
 
-## Deploy on Vercel
+```bash
+# Start Next.js dev server
+npm run dev
+# Open http://localhost:3000
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Compile smart contracts
+npx hardhat compile
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Run tests
+npx hardhat test
+
+# Start local Hardhat network (in another terminal)
+npx hardhat node
+```
+
+### Useful Commands
+
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Start Next.js development server |
+| `npm run build` | Build Next.js for production |
+| `npm run lint` | Run ESLint and TypeScript checks |
+| `npx hardhat compile` | Compile Solidity contracts |
+| `npx hardhat test` | Run smart contract tests |
+| `npx hardhat node` | Start local Hardhat network |
+| `npx hardhat ignition deploy scripts/deploy.ts --network localhost` | Deploy to local network |
+
+### Environment Variables
+
+Create a `.env.local` file (see `.env.example`):
+
+```env
+NEXT_PUBLIC_CONTRACT_ADDRESS=0x...
+NEXT_PUBLIC_CHAIN_ID=31337
+NEXT_PUBLIC_RPC_URL=http://localhost:8545
+PRIVATE_KEY=0x...
+```
+
+## Project Structure
+
+```
+gadgetsales/
+├── src/
+│   ├── app/                    # Next.js App Router pages
+│   │   ├── page.tsx           # Home page
+│   │   ├── create/page.tsx    # Create sale form
+│   │   ├── dashboard/page.tsx # Seller/buyer sales lists
+│   │   ├── sales/[id]/page.tsx # Sale detail page
+│   │   └── globals.css        # Global styles
+│   ├── components/
+│   │   ├── layout/            # Header, footer, layout components
+│   │   ├── sales/             # Sale-specific components
+│   │   ├── wallet/            # Wallet connection UI
+│   │   └── ui/                # Reusable UI elements
+│   ├── hooks/                 # Custom React hooks
+│   ├── lib/                   # Utilities and helpers
+│   ├── constants/             # App constants and defaults
+│   └── types/                 # TypeScript type definitions
+├── contracts/
+│   └── GadgetSales.sol        # Main smart contract
+├── test/
+│   └── GadgetSales.test.ts    # Contract tests
+├── scripts/                   # Deployment scripts
+├── specs.md                   # Project requirements (source of truth)
+├── AGENTS.md                  # AI agent guidelines
+├── .env.example               # Environment variable template
+└── README.md                  # This file
+```
+
+## Key Decisions
+
+1. **Single Repo:** Everything (frontend + smart contracts) in one repository for simplicity.
+2. **No Backend:** All business logic lives in the smart contract and frontend. No API server or database.
+3. **Deterministic Hashing:** Agreement hashes are generated client-side using SHA-256 for transparency.
+4. **Wallet-Only Auth:** No user accounts or login. Wallet address is the sole identity.
+5. **Immutable Records:** All state changes are transactions; history cannot be altered.
+
+## Disclaimer
+
+⚠️ **This is a prototype for educational and demonstration purposes only.**
+
+- Use testnet or local blockchain only. Do not deploy to mainnet.
+- This system does not prove gadget authenticity, ownership, or legality.
+- Not a substitute for legal documentation, contracts, or escrow services.
+- Real disputes between parties cannot be resolved automatically by this system.
+- Treat as a reference implementation, not production-ready software.
