@@ -118,7 +118,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    const handleChainChanged = (..._args: unknown[]) => {
+    const handleChainChanged = () => {
       void refreshConnectedAccount();
     };
 

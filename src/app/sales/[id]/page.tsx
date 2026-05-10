@@ -6,7 +6,11 @@ import { Header } from "@/components/layout/Header";
 import { SaleStatusBadge } from "@/components/sales/SaleStatusBadge";
 import { SaleTimeline } from "@/components/sales/SaleTimeline";
 import { WalletStatus } from "@/components/wallet/WalletStatus";
+import { CONTRACT_ADDRESS } from "@/constants/contract";
+import { getSaleActionVisibility } from "@/lib/salePermissions";
 import { useSale } from "@/hooks/useSale";
+import { useSaleActions } from "@/hooks/useSaleActions";
+import { useWallet } from "@/hooks/useWallet";
 import { formatAddress, formatPrice, formatTimestamp } from "@/lib/format";
 import type { Sale } from "@/types/sale";
 
@@ -43,10 +47,84 @@ function buildTimeline(sale: NonNullable<ReturnType<typeof useSale>["sale"]>) {
 
 export default function SaleDetail() {
   const params = useParams<{ id: string }>();
-  const saleId = params.id ?? "";
-  const { sale, loading, error } = useSale(saleId);
+  const rawSaleId = params.id ?? "";
+  const saleIdIsValid = /^\d+$/.test(rawSaleId);
+  const saleId = saleIdIsValid ? rawSaleId : null;
+  const { sale, loading, error, refetch } = useSale(saleId);
+  const { address, isConnected } = useWallet();
+  const {
+    actionState,
+    transactionHash,
+    errorMessage,
+    acceptSale,
+    markDelivered,
+    confirmReceipt,
+    openDispute,
+    cancelSale,
+    resetActionState,
+  } = useSaleActions();
 
   const timeline = sale ? buildTimeline(sale) : [];
+  const visibility = sale ? getSaleActionVisibility(sale, address) : null;
+  const hasConfigError = !CONTRACT_ADDRESS;
+
+  const actionMessage =
+    actionState.status === "awaiting_wallet_confirmation"
+      ? "Confirm the transaction in your wallet."
+      : actionState.status === "pending_blockchain_confirmation"
+        ? "Waiting for blockchain confirmation..."
+        : actionState.status === "success"
+          ? "Action completed successfully."
+          : actionState.status === "error"
+            ? actionState.errorMessage ?? "Action failed."
+            : "Ready.";
+
+  async function handleAction(action: "accept" | "deliver" | "confirm" | "dispute" | "cancel") {
+    if (!sale) {
+      return;
+    }
+
+    resetActionState();
+
+    try {
+      if (action === "confirm") {
+        const approved = window.confirm("Confirm receipt? This will mark the sale as Completed and cannot be changed.");
+        if (!approved) return;
+      }
+
+      if (action === "dispute") {
+        const approved = window.confirm(
+          "Open dispute? The MVP only records the dispute on-chain and does not resolve it automatically."
+        );
+        if (!approved) return;
+      }
+
+      if (action === "cancel") {
+        const approved = window.confirm("Cancel sale? Cancelled sales cannot be changed.");
+        if (!approved) return;
+      }
+
+      const saleIdValue = sale.id;
+
+      if (action === "accept") {
+        await acceptSale(saleIdValue);
+      } else if (action === "deliver") {
+        await markDelivered(saleIdValue);
+      } else if (action === "confirm") {
+        await confirmReceipt(saleIdValue);
+      } else if (action === "dispute") {
+        await openDispute(saleIdValue);
+      } else {
+        await cancelSale(saleIdValue);
+      }
+
+      await refetch();
+    } catch {
+      // State is already captured in the hook.
+    }
+  }
+
+  const renderedTransactionHash = transactionHash ?? null;
 
   return (
     <>
@@ -57,7 +135,7 @@ export default function SaleDetail() {
             <div className="space-y-3">
               <p className="text-sm uppercase tracking-[0.25em] text-blue-700 font-semibold">Sale details</p>
               <h1 className="text-4xl font-bold text-gray-900">
-                Sale {sale?.id ? `#${sale.id.toString()}` : saleId ? `#${saleId}` : "details"}
+                Sale {sale?.id ? `#${sale.id.toString()}` : rawSaleId ? `#${rawSaleId}` : "details"}
               </h1>
               <p className="text-gray-600">
                 Read-only contract data for the selected gadget sale.
@@ -65,7 +143,20 @@ export default function SaleDetail() {
             </div>
 
             <div className="rounded-3xl border border-gray-200 bg-white p-6 sm:p-8 shadow-sm">
-              {loading ? (
+              {hasConfigError ? (
+                <div className="space-y-3 text-amber-800">
+                  <p className="font-semibold">Missing contract address</p>
+                  <p className="text-sm">
+                    Update .env.local with NEXT_PUBLIC_CONTRACT_ADDRESS from your local deployment,
+                    then restart the dev server.
+                  </p>
+                </div>
+              ) : !saleIdIsValid ? (
+                <div className="space-y-3 text-red-700">
+                  <p className="font-semibold">Invalid sale ID</p>
+                  <p className="text-sm">The route parameter must be a numeric sale ID.</p>
+                </div>
+              ) : loading ? (
                 <p className="text-gray-600">Loading sale from the configured contract...</p>
               ) : error ? (
                 <div className="space-y-4 text-red-700">
@@ -145,6 +236,83 @@ export default function SaleDetail() {
             <div className="rounded-3xl border border-gray-200 bg-white p-6 sm:p-8 shadow-sm">
               <h2 className="text-2xl font-semibold text-gray-900 mb-6">Transaction history</h2>
               {sale ? <SaleTimeline events={timeline} /> : <p className="text-gray-600">Timeline will appear after a sale is created.</p>}
+            </div>
+
+            <div className="rounded-3xl border border-gray-200 bg-white p-6 sm:p-8 shadow-sm">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Actions</h2>
+              {!sale ? (
+                <p className="text-gray-600">Load a sale to see available contract actions.</p>
+              ) : !isConnected ? (
+                <p className="text-gray-600">Connect your wallet to perform sale actions.</p>
+              ) : !visibility ? (
+                <p className="text-gray-600">No action permissions available for this wallet.</p>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600">{actionMessage}</p>
+                  {renderedTransactionHash ? (
+                    <p className="break-all font-mono text-xs text-gray-700">Tx hash: {renderedTransactionHash}</p>
+                  ) : null}
+
+                  <div className="flex flex-col gap-3">
+                    {visibility.canAcceptSale ? (
+                      <button
+                        onClick={() => void handleAction("accept")}
+                        disabled={actionState.status === "awaiting_wallet_confirmation" || actionState.status === "pending_blockchain_confirmation"}
+                        className="rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Accept Sale
+                      </button>
+                    ) : null}
+
+                    {visibility.canMarkDelivered ? (
+                      <button
+                        onClick={() => void handleAction("deliver")}
+                        disabled={actionState.status === "awaiting_wallet_confirmation" || actionState.status === "pending_blockchain_confirmation"}
+                        className="rounded-xl bg-yellow-600 px-4 py-3 font-semibold text-white hover:bg-yellow-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Mark as Delivered
+                      </button>
+                    ) : null}
+
+                    {visibility.canConfirmReceipt ? (
+                      <button
+                        onClick={() => void handleAction("confirm")}
+                        disabled={actionState.status === "awaiting_wallet_confirmation" || actionState.status === "pending_blockchain_confirmation"}
+                        className="rounded-xl bg-green-600 px-4 py-3 font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Confirm Receipt
+                      </button>
+                    ) : null}
+
+                    {visibility.canOpenDispute ? (
+                      <button
+                        onClick={() => void handleAction("dispute")}
+                        disabled={actionState.status === "awaiting_wallet_confirmation" || actionState.status === "pending_blockchain_confirmation"}
+                        className="rounded-xl bg-red-600 px-4 py-3 font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Open Dispute
+                      </button>
+                    ) : null}
+
+                    {visibility.canCancelSale ? (
+                      <button
+                        onClick={() => void handleAction("cancel")}
+                        disabled={actionState.status === "awaiting_wallet_confirmation" || actionState.status === "pending_blockchain_confirmation"}
+                        className="rounded-xl bg-gray-800 px-4 py-3 font-semibold text-white hover:bg-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Cancel Sale
+                      </button>
+                    ) : null}
+
+                    {!visibility.canAcceptSale && !visibility.canMarkDelivered && !visibility.canConfirmReceipt && !visibility.canOpenDispute && !visibility.canCancelSale ? (
+                      <p className="text-sm text-gray-600">
+                        No actions are currently available for this wallet and sale status.
+                      </p>
+                    ) : null}
+                  </div>
+                  {errorMessage ? <p className="text-sm text-red-700">{errorMessage}</p> : null}
+                </div>
+              )}
             </div>
           </div>
 

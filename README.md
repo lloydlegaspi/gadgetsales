@@ -161,6 +161,22 @@ PRIVATE_KEY=0x...
 
 For local development, `NEXT_PUBLIC_CONTRACT_ADDRESS` should be the address printed by `scripts/deploy.ts` after deploying to the running Hardhat node.
 
+### Manual Testing Checklist
+
+Use this sequence after the contract is deployed and the app is running:
+
+1. Create a sale while connected as the Seller account.
+2. Switch MetaMask to a different local Hardhat account.
+3. Accept the sale as the Buyer.
+4. Switch back to the Seller account.
+5. Mark the sale as delivered.
+6. Switch back to the Buyer account.
+7. Confirm receipt.
+8. Repeat with a new sale and open a dispute instead of confirming receipt.
+9. Repeat with a new sale and cancel it before it reaches Completed.
+
+If you see missing contract or wallet errors, recheck `.env.local`, local network selection, and the imported Hardhat account.
+
 ## Project Structure
 
 ```
