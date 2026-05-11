@@ -2,57 +2,59 @@
 
 import React from "react";
 import Link from "next/link";
-import { formatAddress } from "@/lib/format";
-import { useWallet } from "@/hooks/useWallet";
+import { usePathname } from "next/navigation";
+import Image from "next/image";
+import HeaderClient from "./HeaderClient";
+
+const navItems = [
+  { href: "/", label: "Home" },
+  { href: "/create", label: "Create Sale" },
+  { href: "/dashboard", label: "Dashboard" },
+];
 
 export function Header() {
-  const { address, shortenedAddress, isConnecting, error, connectWallet, disconnectWallet } =
-    useWallet();
+  const pathname = usePathname();
 
   return (
-    <header className="border-b border-gray-200 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-        <Link href="/" className="text-2xl font-bold text-blue-600">
-          GadgetSales
-        </Link>
-        <nav className="flex items-center gap-6">
-          <Link href="/" className="text-gray-700 hover:text-blue-600">
-            Home
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
+      <div className="mx-auto flex h-11 max-w-5xl items-center justify-between px-5">
+        <div className="flex h-full items-center gap-6">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-2xl font-bold leading-none text-blue-700 hover:text-blue-800"
+          >
+            <Image
+              src="/logo.png"
+              alt="GadgetSales"
+              width={32}
+              height={32}
+              className="h-8 w-8 flex-shrink-0 object-contain"
+            />
+            <span>GadgetSales</span>
           </Link>
-          <Link href="/create" className="text-gray-700 hover:text-blue-600">
-            Create Sale
-          </Link>
-          <Link href="/dashboard" className="text-gray-700 hover:text-blue-600">
-            Dashboard
-          </Link>
-          <div className="border-l border-gray-300 pl-6">
-            {error && !address ? (
-              <button onClick={() => void connectWallet()} className="text-sm text-red-600 underline">
-                {error}
-              </button>
-            ) : address ? (
-              <div className="flex items-center gap-3 text-sm text-gray-600">
-                <div>
-                  Connected: <span className="font-mono font-semibold">{shortenedAddress || formatAddress(address)}</span>
-                </div>
-                <button
-                  onClick={disconnectWallet}
-                  className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 font-medium"
+
+          <nav className="hidden h-full items-center gap-6 md:flex">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex h-full items-center border-b-2 pt-0.5 text-xs ${
+                    isActive
+                      ? "border-blue-600 font-semibold text-blue-700"
+                      : "border-transparent font-medium text-slate-950 hover:text-blue-700"
+                  }`}
                 >
-                  Disconnect
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => void connectWallet()}
-                disabled={isConnecting}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {isConnecting ? "Connecting..." : "Connect Wallet"}
-              </button>
-            )}
-          </div>
-        </nav>
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        <HeaderClient />
       </div>
     </header>
   );
