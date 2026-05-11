@@ -1,129 +1,131 @@
 # GadgetSales
 
-A blockchain-based transaction verification system for second-hand gadget sales.
+GadgetSales is a blockchain-based transaction verification prototype for second-hand gadget sales. It helps buyers and sellers keep one shared, tamper-resistant record of what they agreed to and how the sale progressed.
 
-## Problem Statement
+## Project Overview
 
-When buying or selling second-hand gadgets, agreements made via chat or messaging are easily edited, deleted, or disputed. There is no shared, tamper-resistant record of what was actually agreed. GadgetSales solves this by recording sale agreements and status updates on a blockchain, creating an immutable transaction history both parties can trust.
+GadgetSales focuses on recording sale agreements and lifecycle updates on-chain:
+- Seller creates a sale record.
+- Buyer accepts the sale.
+- Seller marks it delivered.
+- Buyer either confirms completion or opens a dispute.
 
-## MVP Scope
+The application is intentionally scoped as an MVP and avoids marketplace and payment complexity.
 
-- Sellers create sale records with gadget details, price, and condition.
-- Buyers view sales and accept them on the blockchain.
-- Track status transitions: Created → Accepted → Delivered → Completed.
-- Sellers can mark items as delivered; buyers can confirm receipt or open disputes.
-- View immutable transaction history with timestamps and actor addresses.
+## Real-World Problem
 
-**What this MVP does NOT do:**
-- Does not prove gadget authenticity or ownership.
-- Does not implement real escrow or payment processing.
-- Does not provide automatic dispute resolution.
-- Does not replace legal documentation.
+Second-hand gadget transactions often rely on chat messages that can be edited, deleted, or disputed later. This creates confusion about what was agreed and when key actions happened.
 
-## Tech Stack
+GadgetSales addresses this by recording the sale agreement hash and status updates in smart contract state and events so both parties can verify the transaction history from the same source.
 
-- **Frontend:** Next.js with App Router, TypeScript, React, Tailwind CSS
-- **Smart Contract:** Solidity ^0.8.24
-- **Development:** Hardhat, ethers.js
-- **Wallet:** MetaMask-compatible injected wallet
-- **State Management:** React state hooks only (no Redux/Zustand)
-- **Database:** None for MVP (blockchain only)
+## Why Blockchain Fits
 
-## On-Chain vs Off-Chain Data Design
+Blockchain is a good fit for this problem because the app needs:
+- A shared record between independent parties.
+- Tamper-resistant status transitions.
+- Transparent timestamps and actor addresses.
+- Deterministic, auditable transaction logs.
 
-### On-Chain (Smart Contract Storage)
-- Sale ID, seller address, buyer address
-- Price, gadget name, brand/model, condition summary
-- Agreement hash, optional proof hash
-- Sale status and status timestamps
-- All transactions and state changes are immutable and auditable
+The goal is transaction verification, not gadget authenticity verification.
 
-### Off-Chain (Browser/Local)
-- Full gadget descriptions and images (too large for blockchain)
-- Long-form notes and attachments
-- UI-only session data (form drafts, temporary state)
-- Proof files, receipts, and photos (only hashes stored on-chain)
+## MVP Features
+
+- Create sale with gadget details, condition, price, agreement hash, and optional proof hash.
+- Accept sale (buyer only, and not the seller).
+- Mark delivered (seller only).
+- Confirm receipt (buyer only).
+- Open dispute (buyer only from Delivered).
+- Cancel sale (seller only from Created or Accepted).
+- View sale details and status timeline.
+- View dashboard lists for seller-created and buyer-accepted sales.
+
+## User Roles
+
+- Seller:
+  - Creates sale records.
+  - Cancels from valid states.
+  - Marks delivered after buyer acceptance.
+- Buyer:
+  - Accepts a created sale.
+  - Confirms receipt or opens dispute after delivery.
+- Viewer:
+  - Can read sale details and status history.
 
 ## Smart Contract State Flow
 
-```
-Created
-  ├─→ Accepted
-  │    ├─→ Delivered
-  │    │    ├─→ Completed ✓
-  │    │    └─→ Disputed ✓
-  │    └─→ Cancelled ✓
-  └─→ Cancelled ✓
+```mermaid
+stateDiagram-v2
+    Created --> Accepted
+    Created --> Cancelled
+    Accepted --> Delivered
+    Accepted --> Cancelled
+    Delivered --> Completed
+    Delivered --> Disputed
 ```
 
-**Terminal states:** Completed, Disputed, Cancelled (no further changes allowed)
+Terminal states are `Completed`, `Disputed`, and `Cancelled`.
+
+## On-Chain vs Off-Chain Data
+
+### On-Chain
+
+- Sale ID
+- Seller address
+- Buyer address
+- Price
+- Gadget name
+- Brand/model
+- Condition summary
+- Agreement hash
+- Optional proof hash
+- Status and status timestamps
+
+### Off-Chain
+
+- Long notes and expanded context
+- Photos and receipt files
+- UI-only convenience state
+
+The app does not use a backend database for MVP.
 
 ## Local Development Setup
 
 ### Prerequisites
+
 - Node.js 18+
-- npm or yarn
-- MetaMask or compatible Ethereum wallet (for testing)
+- npm
+- MetaMask-compatible wallet
 
-### Installation
+### Setup
 
 ```bash
-# Clone and install dependencies
-git clone <repo-url>
-cd gadgetsales
 npm install
-
-# Ensure Hardhat is configured
-npx hardhat --version
 ```
 
-### Running the Project
+### Run Core Checks
 
 ```bash
-# Start Next.js dev server
-npm run dev
-# Open http://localhost:3000
-
-# Compile smart contracts
+npm run lint
+npm run build
 npx hardhat compile
-
-# Run tests
 npx hardhat test
-
-# Start local Hardhat network (in another terminal)
-npx hardhat node
-
-# Deploy contract to local Hardhat network
-npx hardhat run scripts/deploy.ts --network localhost
 ```
 
-### Useful Commands
+### Start Local Chain and Deploy
 
-| Command | Purpose |
-|---------|---------|
-| `npm run dev` | Start Next.js development server |
-| `npm run build` | Build Next.js for production |
-| `npm run lint` | Run ESLint and TypeScript checks |
-| `npx hardhat compile` | Compile Solidity contracts |
-| `npx hardhat test` | Run smart contract tests |
-| `npx hardhat node` | Start local Hardhat network |
-| `npx hardhat run scripts/deploy.ts --network localhost` | Deploy to local network |
-
-## Local Hardhat Workflow
-
-1. Start the local network in one terminal:
+Terminal 1:
 
 ```bash
 npx hardhat node
 ```
 
-2. Deploy the contract in another terminal:
+Terminal 2:
 
 ```bash
 npx hardhat run scripts/deploy.ts --network localhost
 ```
 
-3. Copy the deployed address from terminal output and place it in `.env.local`:
+Copy the deployed contract address into `.env.local`:
 
 ```env
 NEXT_PUBLIC_CONTRACT_ADDRESS=0xYourDeployedAddress
@@ -131,97 +133,61 @@ NEXT_PUBLIC_CHAIN_ID=31337
 NEXT_PUBLIC_RPC_URL=http://127.0.0.1:8545
 ```
 
-4. Run the contract tests:
-
-```bash
-npx hardhat test
-```
-
-5. Run the frontend after copying the deployed address into `.env.local`:
+Run the app:
 
 ```bash
 npm run dev
 ```
 
-6. Connect MetaMask to the local Hardhat network and import one of the public Hardhat test accounts only for local development.
-  These accounts are public development keys generated by Hardhat and must never be used for real funds.
+## Manual Demo Script
 
-Use local/testnet environments only for this MVP. Do not use real private keys, live funds, or sensitive personal data.
+Use this exact sequence for presentation:
 
-### Environment Variables
+1. Start local node: `npx hardhat node`.
+2. Deploy contract: `npx hardhat run scripts/deploy.ts --network localhost`.
+3. Copy deployed address to `.env.local` as `NEXT_PUBLIC_CONTRACT_ADDRESS`.
+4. Run app: `npm run dev`.
+5. Connect seller account in MetaMask.
+6. Create sale from `/create`.
+7. Switch to buyer account.
+8. Open the sale detail page and accept sale.
+9. Switch back to seller account.
+10. Mark delivered.
+11. Switch to buyer account.
+12. Confirm receipt.
+13. Repeat with a new sale and use dispute path: Accept -> Delivered -> Disputed.
+14. Repeat with another sale and use cancel path: Created -> Cancelled or Accepted -> Cancelled.
 
-Create a `.env.local` file (see `.env.example`):
+## Known Limitations
 
-```env
-NEXT_PUBLIC_CONTRACT_ADDRESS=0x...
-NEXT_PUBLIC_CHAIN_ID=31337
-NEXT_PUBLIC_RPC_URL=http://localhost:8545
-PRIVATE_KEY=0x...
-```
+- No escrow or real payment handling.
+- No chat or messaging.
+- No authentication backend; wallet address is identity.
+- No marketplace browsing/search/ranking.
+- No IMEI or serial verification.
+- No automated dispute resolution.
+- No guarantee of gadget physical authenticity, condition, or ownership legitimacy.
 
-For local development, `NEXT_PUBLIC_CONTRACT_ADDRESS` should be the address printed by `scripts/deploy.ts` after deploying to the running Hardhat node.
+## Future Improvements
 
-### Manual Testing Checklist
+Potential post-MVP improvements (outside current scope):
 
-Use this sequence after the contract is deployed and the app is running:
+- Better indexing for large sale histories.
+- Optional file storage integration for proof artifacts (store hash on-chain, file off-chain).
+- Richer analytics and reporting views for presentation.
+- Network/environment health checks and UX guidance.
 
-1. Create a sale while connected as the Seller account.
-2. Switch MetaMask to a different local Hardhat account.
-3. Accept the sale as the Buyer.
-4. Switch back to the Seller account.
-5. Mark the sale as delivered.
-6. Switch back to the Buyer account.
-7. Confirm receipt.
-8. Repeat with a new sale and open a dispute instead of confirming receipt.
-9. Repeat with a new sale and cancel it before it reaches Completed.
+## Scope Confirmation
 
-If you see missing contract or wallet errors, recheck `.env.local`, local network selection, and the imported Hardhat account.
-
-## Project Structure
-
-```
-gadgetsales/
-├── src/
-│   ├── app/                    # Next.js App Router pages
-│   │   ├── page.tsx           # Home page
-│   │   ├── create/page.tsx    # Create sale form
-│   │   ├── dashboard/page.tsx # Seller/buyer sales lists
-│   │   ├── sales/[id]/page.tsx # Sale detail page
-│   │   └── globals.css        # Global styles
-│   ├── components/
-│   │   ├── layout/            # Header, footer, layout components
-│   │   ├── sales/             # Sale-specific components
-│   │   ├── wallet/            # Wallet connection UI
-│   │   └── ui/                # Reusable UI elements
-│   ├── hooks/                 # Custom React hooks
-│   ├── lib/                   # Utilities and helpers
-│   ├── constants/             # App constants and defaults
-│   └── types/                 # TypeScript type definitions
-├── contracts/
-│   └── GadgetSales.sol        # Main smart contract
-├── test/
-│   └── GadgetSales.test.ts    # Contract tests
-├── scripts/                   # Deployment scripts
-├── specs.md                   # Project requirements (source of truth)
-├── AGENTS.md                  # AI agent guidelines
-├── .env.example               # Environment variable template
-└── README.md                  # This file
-```
-
-## Key Decisions
-
-1. **Single Repo:** Everything (frontend + smart contracts) in one repository for simplicity.
-2. **No Backend:** All business logic lives in the smart contract and frontend. No API server or database.
-3. **Deterministic Hashing:** Agreement hashes are generated client-side using SHA-256 for transparency.
-4. **Wallet-Only Auth:** No user accounts or login. Wallet address is the sole identity.
-5. **Immutable Records:** All state changes are transactions; history cannot be altered.
+No out-of-scope features are included in this MVP:
+- No escrow
+- No chat
+- No authentication system
+- No marketplace search/browsing
+- No backend/database
+- No IMEI/serial verification
+- No NFTs/tokens
 
 ## Disclaimer
 
-⚠️ **This is a prototype for educational and demonstration purposes only.**
-
-- Use testnet or local blockchain only. Do not deploy to mainnet.
-- This system does not prove gadget authenticity, ownership, or legality.
-- Not a substitute for legal documentation, contracts, or escrow services.
-- Real disputes between parties cannot be resolved automatically by this system.
-- Treat as a reference implementation, not production-ready software.
+This project is an educational prototype for transaction verification workflows on a blockchain. Use local/test environments only.

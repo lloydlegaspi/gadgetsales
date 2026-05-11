@@ -136,7 +136,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     const ethereum = getEthereumProvider();
     if (!ethereum) {
       setError("MetaMask is not available. Install a compatible wallet to continue.");
-      throw new Error("MetaMask is not available. Install a compatible wallet to continue.");
+      return;
     }
 
     setIsConnecting(true);
@@ -151,7 +151,6 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     } catch (connectError) {
       const message = normalizeError(connectError);
       setError(message);
-      throw new Error(message);
     } finally {
       setIsConnecting(false);
     }

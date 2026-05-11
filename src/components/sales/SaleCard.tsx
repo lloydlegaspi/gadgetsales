@@ -12,10 +12,11 @@ interface SaleCardProps {
 
 export function SaleCard({ sale }: SaleCardProps) {
   return (
-    <Link href={`/sales/${sale.id}`}>
+    <Link href={`/sales/${sale.id}`} className="block">
       <div className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer">
         <div className="flex items-start justify-between mb-4">
-          <div>
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-blue-700">Sale #{sale.id.toString()}</p>
             <h3 className="text-xl font-semibold text-gray-900">{sale.gadgetName}</h3>
             <p className="text-gray-600">{sale.brandModel}</p>
           </div>
@@ -31,7 +32,7 @@ export function SaleCard({ sale }: SaleCardProps) {
             <span className="text-gray-500">Buyer:</span>{" "}
             <span className="font-mono text-gray-900">
               {sale.buyer === "0x0000000000000000000000000000000000000000"
-                ? "—"
+                ? "Not accepted"
                 : formatAddress(sale.buyer)}
             </span>
           </div>

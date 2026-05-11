@@ -20,7 +20,7 @@ type UseSaleResult = {
   refetch: () => Promise<void>;
 };
 
-function normalizeSale(rawSale: Awaited<ReturnType<Awaited<ReturnType<typeof getReadOnlyContract>>["getSale"]>>): Sale {
+export function normalizeSale(rawSale: Awaited<ReturnType<Awaited<ReturnType<typeof getReadOnlyContract>>["getSale"]>>): Sale {
   return {
     id: BigInt(rawSale.id.toString()),
     seller: rawSale.seller,
