@@ -188,44 +188,6 @@ function PreviewRow({
   );
 }
 
-function ExampleRow({
-  icon,
-  label,
-  tone,
-  message,
-  action,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  tone: "blue" | "green" | "amber" | "red";
-  message: string;
-  action?: React.ReactNode;
-  value?: React.ReactNode;
-}) {
-  const toneStyles = {
-    blue: "border-blue-100 bg-blue-50 text-blue-700",
-    green: "border-emerald-100 bg-emerald-50 text-emerald-700",
-    amber: "border-amber-100 bg-amber-50 text-amber-800",
-    red: "border-rose-100 bg-rose-50 text-rose-700",
-  } as const;
-
-  return (
-    <div className={`grid grid-cols-[minmax(0,120px)_minmax(0,1fr)] items-center gap-3 rounded-lg border px-3 py-2.5 ${toneStyles[tone]}`}>
-      <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
-        <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-current/10 bg-white/70 text-current shadow-sm">
-          {icon}
-        </span>
-        <span>{label}</span>
-      </div>
-      <div className="flex min-h-9 items-center justify-between gap-3">
-        <div className="min-w-0 flex-1 text-sm leading-5">{value ?? message}</div>
-        {action}
-      </div>
-    </div>
-  );
-}
-
 export default function CreateSale() {
   const formRef = useRef<HTMLFormElement>(null);
   const { isConnected, shortenedAddress, connectWallet } = useWallet();
@@ -240,11 +202,8 @@ export default function CreateSale() {
   } = useCreateSale();
   const [copyNotice, setCopyNotice] = useState<string | null>(null);
 
-  const pricePreview = /^\d+$/.test(form.price.trim()) ? BigInt(form.price.trim()) : BigInt(0);
-  const shortPrice = formatPrice(pricePreview);
-  const txHashPreview =
-    transactionState.transactionHash ?? "0x5f6a2b91e48c7a4e1d83c93e1a72be4d9e20a33f1db2a66b63cc8bb2d01a83eb2";
-  const saleLinkId = createdSaleId ? createdSaleId.toString() : "0";
+  const hasPriceValue = /^\d+$/.test(form.price.trim());
+  const shortPrice = hasPriceValue ? formatPrice(BigInt(form.price.trim())) : "Not provided yet";
 
   const fieldCopy = async (value: string, label: string) => {
     if (!value) {
@@ -408,7 +367,7 @@ export default function CreateSale() {
 
               <div className="mt-3 rounded-[10px] border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <h2 className="text-[14px] font-semibold text-slate-900">Transaction State (Examples)</h2>
+                  <h2 className="text-[14px] font-semibold text-slate-900">Transaction State</h2>
                   <button
                     type="submit"
                     disabled={!isConnected || isSubmitting}
@@ -422,95 +381,90 @@ export default function CreateSale() {
                 </div>
 
                 <div className="space-y-2.5">
-                  <ExampleRow
-                    icon={<FileIcon />}
-                    label="Wallet setup"
-                    tone="blue"
-                    message="Connect your wallet to create a sale."
-                    action={
-                      <button
-                        type="button"
-                        onClick={() => void connectWallet()}
-                        disabled={isConnected}
-                        className="inline-flex h-7 items-center rounded-[5px] border border-blue-200 bg-white px-3 text-[12px] font-medium text-blue-700 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        Connect Wallet
-                      </button>
-                    }
-                    value={isConnected ? `Connected as ${shortenedAddress}` : undefined}
-                  />
-
-                  <ExampleRow
-                    icon={<SparkIcon />}
-                    label="Awaiting"
-                    tone="blue"
-                    message="Confirm in wallet."
-                    action={
-                      <button
-                        type="button"
-                        disabled
-                        className="inline-flex h-7 items-center rounded-[5px] border border-slate-200 bg-slate-50 px-3 text-[12px] font-medium text-slate-400"
-                      >
-                        Confirm in wallet...
-                      </button>
-                    }
-                  />
-
-                  <ExampleRow
-                    icon={<SpinnerIcon />}
-                    label="Pending"
-                    tone="amber"
-                    message="Waiting for blockchain confirmation..."
-                    action={
-                      <button
-                        type="button"
-                        disabled
-                        className="inline-flex h-7 items-center gap-1 rounded-[5px] border border-amber-200 bg-amber-50 px-3 text-[12px] font-medium text-amber-700"
-                      >
-                        <SpinnerIcon className="animate-spin" />
-                        Waiting...
-                      </button>
-                    }
-                  />
-
-                  <ExampleRow
-                    icon={<ShieldIcon />}
-                    label="Success"
-                    tone="green"
-                    message="Sale created successfully on-chain."
-                    value={
-                      <div className="flex min-w-0 flex-wrap items-center gap-2">
-                        <span className="inline-flex items-center gap-1 rounded-[5px] border border-emerald-200 bg-white px-2.5 py-1 text-[12px] text-emerald-800">
-                          Tx: <span className="font-mono text-[11px]">{txHashPreview.slice(0, 10)}...{txHashPreview.slice(-4)}</span>
-                        </span>
-                        <CopyButton value={txHashPreview} label="Transaction hash" />
+                  <div className="grid grid-cols-[minmax(0,120px)_minmax(0,1fr)] items-center gap-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2.5 text-blue-700">
+                    <div className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-current/10 bg-white/70 text-current shadow-sm">
+                        <FileIcon />
+                      </span>
+                      <span>Wallet</span>
+                    </div>
+                    <div className="flex min-h-9 items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1 text-sm leading-5 text-slate-700">
+                        {isConnected ? `Connected as ${shortenedAddress}` : "Connect your wallet to create a sale."}
                       </div>
-                    }
-                    action={
-                      <Link
-                        href={`/sales/${saleLinkId}`}
-                        className="inline-flex h-7 items-center gap-1 rounded-[5px] bg-emerald-100 px-3 text-[12px] font-medium text-emerald-700 transition hover:bg-emerald-200"
-                      >
-                        View Sale Detail <LinkIcon />
-                      </Link>
-                    }
-                  />
+                      {!isConnected ? (
+                        <button
+                          type="button"
+                          onClick={() => void connectWallet()}
+                          className="inline-flex h-7 items-center rounded-[5px] border border-blue-200 bg-white px-3 text-[12px] font-medium text-blue-700 transition hover:bg-blue-50"
+                        >
+                          Connect Wallet
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
 
-                  <ExampleRow
-                    icon={<WarningIcon />}
-                    label="Error"
-                    tone="red"
-                    message={transactionState.errorMessage ?? "Transaction failed. Please retry after checking your wallet confirmation."}
-                    action={
+                  <div
+                    className={`rounded-lg border px-3 py-3 text-sm ${
+                      transactionState.status === "success"
+                        ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+                        : transactionState.status === "error"
+                          ? "border-rose-100 bg-rose-50 text-rose-700"
+                          : transactionState.status === "pending_blockchain_confirmation"
+                            ? "border-amber-100 bg-amber-50 text-amber-800"
+                            : "border-blue-100 bg-blue-50 text-blue-700"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {transactionState.status === "pending_blockchain_confirmation" ? (
+                        <SpinnerIcon className="animate-spin" />
+                      ) : transactionState.status === "error" ? (
+                        <WarningIcon />
+                      ) : (
+                        <SparkIcon />
+                      )}
+                      <span className="font-medium">{TRANSACTION_STATUS_LABELS[transactionState.status]}</span>
+                    </div>
+
+                    <p className="mt-2 text-slate-700">
+                      {transactionState.status === "awaiting_wallet_confirmation"
+                        ? "Confirm the transaction in your wallet."
+                        : transactionState.status === "pending_blockchain_confirmation"
+                          ? "Waiting for blockchain confirmation..."
+                          : transactionState.status === "success"
+                            ? "Sale created successfully on-chain."
+                            : transactionState.status === "error"
+                              ? transactionState.errorMessage ?? "Transaction failed. Please try again."
+                              : "Ready to submit once all required fields are complete."}
+                    </p>
+
+                    {transactionState.transactionHash ? (
+                      <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2">
+                        <span className="inline-flex items-center gap-1 rounded-[5px] border border-current/20 bg-white px-2.5 py-1 text-[12px]">
+                          Tx: <span className="font-mono text-[11px]">{transactionState.transactionHash.slice(0, 10)}...{transactionState.transactionHash.slice(-4)}</span>
+                        </span>
+                        <CopyButton value={transactionState.transactionHash} label="Transaction hash" />
+                        {createdSaleId ? (
+                          <Link
+                            href={`/sales/${createdSaleId.toString()}`}
+                            className="inline-flex h-7 items-center gap-1 rounded-[5px] bg-emerald-100 px-3 text-[12px] font-medium text-emerald-700 transition hover:bg-emerald-200"
+                          >
+                            View Sale Detail <LinkIcon />
+                          </Link>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    {transactionState.status === "error" ? (
                       <button
                         type="button"
                         onClick={() => formRef.current?.requestSubmit()}
-                        className="inline-flex h-7 items-center rounded-[5px] border border-rose-200 bg-white px-3 text-[12px] font-medium text-rose-600 transition hover:bg-rose-50"
+                        className="mt-2 inline-flex h-7 items-center rounded-[5px] border border-rose-200 bg-white px-3 text-[12px] font-medium text-rose-600 transition hover:bg-rose-50"
                       >
                         Retry
                       </button>
-                    }
-                  />
+                    ) : null}
+                  </div>
                 </div>
 
                 {copyNotice ? (
@@ -536,16 +490,16 @@ export default function CreateSale() {
                 </div>
 
                 <div className="divide-y divide-slate-100 rounded-[10px] border border-slate-200 bg-white px-4">
-                  <PreviewRow icon={<FileIcon />} label="Gadget name" value={form.gadgetName || "iPhone 14 Pro 128GB"} />
-                  <PreviewRow icon={<TagIcon />} label="Brand / model" value={form.brandModel || "Apple / A2890, Deep Purple"} />
-                  <PreviewRow icon={<ShieldIcon />} label="Condition summary" value={form.conditionSummary || "Used, very good condition, minor frame wear, screen intact, battery health 89%"} />
+                  <PreviewRow icon={<FileIcon />} label="Gadget name" value={form.gadgetName || "Not provided yet"} />
+                  <PreviewRow icon={<TagIcon />} label="Brand / model" value={form.brandModel || "Not provided yet"} />
+                  <PreviewRow icon={<ShieldIcon />} label="Condition summary" value={form.conditionSummary || "Not provided yet"} />
                   <PreviewRow icon={<SparkIcon />} label="Price" value={shortPrice} />
-                  <PreviewRow icon={<FileIcon />} label="Short notes" value={form.notes || "Includes original box and charging cable. Meet-up transaction."} />
+                  <PreviewRow icon={<FileIcon />} label="Short notes" value={form.notes || "Not provided yet"} />
                   <PreviewRow
                     icon={<LinkIcon />}
                     label="Proof hash"
-                    value={form.proofHash || "QmX7p2R9cV8dL1nK4mH2tW9bF6sA3yZ8uR4eP1qT7hJ5mN"}
-                    copyValue={form.proofHash || "QmX7p2R9cV8dL1nK4mH2tW9bF6sA3yZ8uR4eP1qT7hJ5mN"}
+                    value={form.proofHash || "Not provided yet"}
+                    copyValue={form.proofHash || undefined}
                   />
                 </div>
 
