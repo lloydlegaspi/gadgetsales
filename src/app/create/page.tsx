@@ -264,13 +264,13 @@ export default function CreateSale() {
   return (
     <>
       <Header />
-      <main className="flex-1 bg-[#f4f7fb] bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.08),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.06),_transparent_28%)] px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
-        <div className="mx-auto w-full max-w-[1024px]">
-          <div className="mb-4 flex flex-col gap-2">
-            <h1 className="text-[28px] font-semibold tracking-[-0.04em] text-slate-900 sm:text-[30px]">
+      <main className="flex-1 bg-[#f4f7fb] bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.08),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(14,165,233,0.06),_transparent_28%)] text-slate-950">
+        <div className="mx-auto w-full max-w-7xl px-4 pb-10 pt-8 sm:px-6 lg:px-12">
+          <div className="mb-6 flex flex-col gap-2">
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">
               Create Sale Record
             </h1>
-            <p className="max-w-2xl text-[14px] leading-6 text-slate-600">
+            <p className="max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">
               Record the agreed gadget details and sale terms before the buyer accepts.
             </p>
           </div>

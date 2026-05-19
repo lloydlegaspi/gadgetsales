@@ -192,19 +192,20 @@ export default function Home() {
     <>
       <Header />
       <main className="home-page flex-1 bg-slate-50 text-slate-950">
-        <section className="mx-auto max-w-5xl px-5 pb-20 pt-20 text-center">
-          <h1 className="text-4xl font-extrabold leading-tight text-slate-950 sm:text-5xl">
-            Trust Every Transfer.
-            <br />
-            Verify Every Sale.
-          </h1>
-          <p className="mx-auto mt-6 max-w-xl text-sm leading-7 text-slate-700">
-            Record agreed gadget sale details on-chain for a tamper-resistant history. Ensure
-            transparency and accountability throughout your second-hand transactions without relying
-            on central authorities.
-          </p>
+        <section className="w-full px-4 pb-16 pt-16 text-center sm:px-6 lg:px-12">
+          <div className="mx-auto w-full max-w-7xl">
+            <h1 className="text-4xl font-extrabold leading-tight text-slate-950 sm:text-5xl">
+              Trust Every Transfer.
+              <br />
+              Verify Every Sale.
+            </h1>
+            <p className="mx-auto mt-6 max-w-xl text-sm leading-7 text-slate-700 sm:text-base">
+              Record agreed gadget sale details on-chain for a tamper-resistant history. Ensure
+              transparency and accountability throughout your second-hand transactions without relying
+              on central authorities.
+            </p>
 
-          <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               href="/create"
               className="inline-flex h-10 min-w-36 items-center justify-center gap-2 rounded-md bg-blue-700 px-6 text-xs font-bold text-white shadow-lg transition-colors hover:bg-blue-800"
@@ -219,17 +220,19 @@ export default function Home() {
               <GridIcon />
               View Dashboard
             </Link>
-          </div>
+            </div>
 
-          <div className="mx-auto mt-5 flex max-w-sm items-start justify-center gap-2 rounded border border-blue-100 bg-indigo-50 px-5 py-2.5 text-xs leading-5 text-slate-500">
-            <InfoIcon className="mt-0.5 shrink-0 text-blue-700" />
-            <p>Records agreement and transaction status. Does not verify physical authenticity.</p>
+            <div className="mx-auto mt-5 flex max-w-sm items-start justify-center gap-2 rounded border border-blue-100 bg-indigo-50 px-5 py-2.5 text-xs leading-5 text-slate-500">
+              <InfoIcon className="mt-0.5 shrink-0 text-blue-700" />
+              <p>Records agreement and transaction status. Does not verify physical authenticity.</p>
+            </div>
           </div>
         </section>
 
-        <section className="mx-auto max-w-5xl border-y border-slate-200 px-5 py-7 text-center">
-          <h2 className="text-xl font-extrabold">How it works</h2>
-          <div className="mt-7 grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-0">
+        <section className="w-full border-y border-slate-200 px-4 py-10 text-center sm:px-6 lg:px-12">
+          <div className="mx-auto w-full max-w-7xl">
+            <h2 className="text-xl font-extrabold sm:text-2xl">How it works</h2>
+            <div className="mt-7 grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-0">
             {workflowSteps.map((step) => {
               const StepIcon = step.icon;
               return (
@@ -242,14 +245,16 @@ export default function Home() {
                 </div>
               );
             })}
+            </div>
           </div>
         </section>
 
-        <section className="mx-auto max-w-5xl px-5 py-16">
-          <h2 className="text-center text-xl font-extrabold">
-            Why use a verified ledger?
-          </h2>
-          <div className="mt-7 grid gap-5 md:grid-cols-3">
+        <section className="w-full px-4 py-16 sm:px-6 lg:px-12">
+          <div className="mx-auto w-full max-w-7xl">
+            <h2 className="text-center text-xl font-extrabold sm:text-2xl">
+              Why use a verified ledger?
+            </h2>
+            <div className="mt-7 grid gap-5 md:grid-cols-3">
             {verificationCards.map((card) => {
               const CardIcon = card.icon;
               return (
@@ -265,13 +270,14 @@ export default function Home() {
                 </article>
               );
             })}
+            </div>
           </div>
         </section>
 
-        <section className="mx-auto max-w-5xl rounded-lg border border-blue-100 bg-indigo-50 px-7 py-6">
-          <div className="grid gap-7 md:grid-cols-2 md:items-center">
+        <section className="w-full px-4 pb-8 sm:px-6 lg:px-12">
+          <div className="mx-auto grid w-full max-w-7xl gap-7 rounded-lg border border-blue-100 bg-indigo-50 px-7 py-6 md:grid-cols-2 md:items-center">
             <div>
-              <h2 className="text-xl font-extrabold">Scope of Verification</h2>
+              <h2 className="text-xl font-extrabold sm:text-2xl">Scope of Verification</h2>
               <p className="mt-2 max-w-sm text-sm leading-6 text-slate-700">
                 GadgetSales is a utility for recording intent and status, not a comprehensive
                 mediation service.
@@ -291,12 +297,12 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-2xl px-5 py-20 text-center">
-          <div className="rounded-lg border border-blue-200 bg-white px-8 py-10 shadow-xl">
-            <h2 className="text-xl font-extrabold">
+        <section className="w-full px-4 py-16 text-center sm:px-6 lg:px-12">
+          <div className="mx-auto w-full max-w-7xl rounded-lg border border-blue-200 bg-white px-8 py-10 shadow-xl">
+            <h2 className="text-xl font-extrabold sm:text-2xl">
               Ready to record your next sale?
             </h2>
-            <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-slate-700">
+            <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-slate-700 sm:text-base">
               Create a clear, verifiable record of your transaction terms before handing over your
               device.
             </p>
@@ -311,7 +317,7 @@ export default function Home() {
         </section>
 
         <footer className="border-t border-slate-200 bg-slate-50">
-          <div className="mx-auto flex max-w-5xl flex-col gap-4 px-5 py-5 text-xs text-slate-500 md:flex-row md:items-center md:justify-between">
+          <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-5 text-xs text-slate-500 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-12">
             <Link href="/" className="font-bold text-blue-700">
               GadgetSales
             </Link>

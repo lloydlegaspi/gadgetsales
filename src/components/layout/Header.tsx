@@ -17,7 +17,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
-      <div className="mx-auto flex h-11 max-w-5xl items-center justify-between px-5">
+      <div className="mx-auto flex h-11 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-12">
         <div className="flex h-full items-center gap-6">
           <Link
             href="/"
