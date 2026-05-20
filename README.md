@@ -12,6 +12,44 @@ GadgetSales focuses on recording sale agreements and lifecycle updates on-chain:
 
 The application is intentionally scoped as an MVP and avoids marketplace and payment complexity.
 
+## System Architecture
+
+GadgetSales uses a frontend-only Web3 architecture for MVP: Next.js handles UI and interaction logic, ethers.js connects to an injected wallet, and all sale-state writes are executed through a Solidity smart contract.
+
+```mermaid
+flowchart LR
+  U[User: Seller or Buyer]
+  MM[Injected Wallet\nMetaMask-compatible]
+  FE[Next.js App Router UI\nPages + Components]
+  HK[Custom Hooks\nuseWallet, useCreateSale, useSale, useSaleActions]
+  LIB[Client Utilities\nagreement hash + formatting + permissions]
+  ETH[Ethers.js Provider/Signer]
+  RPC[Hardhat Local RPC\n127.0.0.1:8545]
+  SC[GadgetSales.sol\nSale state machine + events]
+  CH[(Blockchain State\nSale records + timestamps)]
+  OC[(Off-chain UI Context\nform drafts + notes + files)]
+
+  U --> FE
+  U --> MM
+  FE --> HK
+  HK --> LIB
+  HK --> ETH
+  ETH --> MM
+  ETH --> RPC
+  RPC --> SC
+  SC --> CH
+  FE --> OC
+  CH --> FE
+```
+
+### Architecture Notes
+
+- Frontend only: no backend API server and no database in MVP.
+- Wallet is identity: actor permissions are enforced on-chain by wallet address.
+- Deterministic agreement hash is generated client-side before `createSale`.
+- Smart contract is the source of truth for status, timestamps, and transitions.
+- UI reads from contract state/events and mirrors lifecycle progress in dashboard/detail pages.
+
 ## Real-World Problem
 
 Second-hand gadget transactions often rely on chat messages that can be edited, deleted, or disputed later. This creates confusion about what was agreed and when key actions happened.
